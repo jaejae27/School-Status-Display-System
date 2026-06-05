@@ -209,8 +209,14 @@ export const storage = {
       let classes: ClassData[] = [];
       let events: MonthlyEvent[] = [];
       let notices: Notice[] = [];
+      let timeout: any = null;
 
-      const emit = () => callback({ settings, classes, events, notices });
+      const emit = () => {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          callback({ settings, classes, events, notices });
+        }, 50); // Debounce to prevent rapid initial updates
+      };
 
       const unsubSettings = onSnapshot(doc(db, "settings", "config"), (snapshot) => {
         settings = snapshot.exists() ? (snapshot.data() as SchoolSettings) : null;
@@ -233,6 +239,7 @@ export const storage = {
       });
 
       return () => {
+        if (timeout) clearTimeout(timeout);
         unsubSettings();
         unsubClasses();
         unsubEvents();

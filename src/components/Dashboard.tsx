@@ -116,34 +116,34 @@ export default function Dashboard() {
       <main className="flex flex-col gap-8 p-10">
         {/* Statistics Row */}
         <div className="flex gap-8">
-           <div className="flex-1 rounded-[2.5rem] bg-indigo-50/30 border border-indigo-100/50 p-6 flex items-center justify-between shadow-sm">
+           <div className="flex-1 rounded-[2.5rem] bg-indigo-50/30 border border-indigo-100/50 py-2 px-10 flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-4">
-                <div className="h-8 w-1.5 rounded-full bg-indigo-400"></div>
+                <div className="h-4 w-1.5 rounded-full bg-indigo-400"></div>
                 <div>
-                  <h3 className="text-base font-black tracking-tighter text-indigo-600">전교생 현황</h3>
-                  <p className="text-[9px] font-bold text-indigo-300 uppercase tracking-widest leading-none">School Enrollment Status</p>
+                  <h3 className="text-2xl font-black tracking-tighter text-indigo-600 leading-none">전교생 현황</h3>
+                  <p className="text-[8px] font-bold text-indigo-300 uppercase tracking-widest leading-none mt-0.5">School Enrollment Status</p>
                 </div>
               </div>
               <div className="flex items-center gap-12">
                 <div className="text-center">
-                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">총 학급</div>
-                  <div className="text-2xl font-black text-slate-700">{classes.length}</div>
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">총 학급</div>
+                  <div className="text-2xl font-black text-slate-700 leading-tight">{classes.length}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">남학생</div>
-                  <div className="text-2xl font-black text-blue-500">{classes.reduce((acc, c) => acc + (c.boysCount || 0), 0)}</div>
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">남학생</div>
+                  <div className="text-2xl font-black text-blue-500 leading-tight">{classes.reduce((acc, c) => acc + (c.boysCount || 0), 0)}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">여학생</div>
-                  <div className="text-2xl font-black text-pink-500">{classes.reduce((acc, c) => acc + (c.girlsCount || 0), 0)}</div>
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">여학생</div>
+                  <div className="text-2xl font-black text-pink-500 leading-tight">{classes.reduce((acc, c) => acc + (c.girlsCount || 0), 0)}</div>
                 </div>
-                <div className="h-12 w-px bg-slate-100"></div>
-                <div className="flex items-center gap-5 px-8 py-3 bg-indigo-500 rounded-[1.5rem] shadow-xl shadow-indigo-100 transition-transform hover:scale-105">
+                <div className="h-6 w-px bg-slate-100"></div>
+                <div className="flex items-center gap-5 px-6 py-1.5 bg-indigo-500 rounded-[1.5rem] shadow-xl shadow-indigo-100 transition-transform hover:scale-105">
                   <div className="text-right">
-                    <div className="text-[9px] font-black text-indigo-100 uppercase tracking-widest">전체 인원</div>
-                    <div className="text-[10px] font-bold text-indigo-200">TOTAL STUDENTS</div>
+                    <div className="text-[8px] font-black text-indigo-100 uppercase tracking-widest">전체 인원</div>
+                    <div className="text-[9px] font-bold text-indigo-200">TOTAL STUDENTS</div>
                   </div>
-                  <div className="text-4xl font-black text-white tracking-tighter">
+                  <div className="text-3xl font-black text-white tracking-tighter">
                     {classes.reduce((acc, c) => acc + (c.boysCount || 0) + (c.girlsCount || 0), 0)}
                   </div>
                 </div>

@@ -71,13 +71,13 @@ app.post("/api/upload/events", upload.single("file"), async (req, res) => {
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: {
+      model: "gemini-1.5-flash",
+      contents: [{
         parts: [
           { inlineData: { data: base64Data, mimeType } },
           { text: prompt }
         ]
-      },
+      }],
       config: {
         responseMimeType: "application/json"
       }
