@@ -3,54 +3,55 @@ import { useMemo } from "react";
 
 interface Props {
   classes: ClassData[];
+  grade?: number; // Optional grade filter
 }
 
-export default function ClassBoard({ classes }: Props) {
-  const grades = [1, 2, 3];
+export default function ClassBoard({ classes, grade: filterGrade }: Props) {
+  const grades = filterGrade ? [filterGrade] : [1, 2, 3];
 
   const getGradeTheme = (grade: number) => {
     switch (grade) {
       case 1:
         return {
-          bg: "bg-green-50/40",
+          bg: "bg-green-50/10",
           border: "border-green-100",
-          header: "bg-green-400/90",
+          header: "bg-green-500",
           text: "text-green-800",
-          accent: "bg-green-50",
-          rowHover: "hover:bg-green-100/40"
+          accent: "bg-green-50/50",
+          rowHover: "hover:bg-green-50/80"
         };
       case 2:
         return {
-          bg: "bg-sky-50/40",
+          bg: "bg-sky-50/10",
           border: "border-sky-100",
-          header: "bg-sky-400/90",
+          header: "bg-sky-500",
           text: "text-sky-800",
-          accent: "bg-sky-50",
-          rowHover: "hover:bg-sky-100/40"
+          accent: "bg-sky-50/50",
+          rowHover: "hover:bg-sky-50/80"
         };
       case 3:
         return {
-          bg: "bg-pink-50/40",
+          bg: "bg-pink-50/10",
           border: "border-pink-100",
-          header: "bg-pink-400/90",
+          header: "bg-pink-500",
           text: "text-pink-800",
-          accent: "bg-pink-50",
-          rowHover: "hover:bg-pink-100/40"
+          accent: "bg-pink-50/50",
+          rowHover: "hover:bg-pink-50/80"
         };
       default:
         return {
-          bg: "bg-slate-50/40",
+          bg: "bg-slate-50/10",
           border: "border-slate-100",
-          header: "bg-slate-400/90",
+          header: "bg-slate-500",
           text: "text-slate-800",
-          accent: "bg-slate-50",
-          rowHover: "hover:bg-slate-100/40"
+          accent: "bg-slate-50/50",
+          rowHover: "hover:bg-slate-50/80"
         };
     }
   };
 
   return (
-    <div className="space-y-12">
+    <div className="flex flex-col gap-6">
       {grades.map((grade) => {
         const gradeClasses = classes
           .filter((c) => c.grade === grade)
@@ -60,41 +61,43 @@ export default function ClassBoard({ classes }: Props) {
         const theme = getGradeTheme(grade);
 
         return (
-          <div key={grade} className={`rounded-[2.5rem] border-2 ${theme.border} ${theme.bg} overflow-hidden shadow-sm backdrop-blur-sm`}>
-            <div className={`px-8 py-4 ${theme.header} text-white flex items-center justify-between shadow-md`}>
-              <h4 className="text-2xl font-black">
-                {grade}학년 현황판
+          <div key={grade} className={`rounded-[2rem] border ${theme.border} ${theme.bg} overflow-hidden shadow-sm backdrop-blur-sm flex flex-col h-full`}>
+            <div className={`px-6 py-3 ${theme.header} text-white flex items-center justify-between`}>
+              <h4 className="text-xl font-black">
+                {grade}학년
               </h4>
-              <span className="text-sm font-black opacity-90 uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">
-                {gradeClasses.length} CLASSES
+              <span className="text-[10px] font-black opacity-90 uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">
+                {gradeClasses.length} C
               </span>
             </div>
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className={`${theme.accent} text-sm font-black uppercase tracking-widest ${theme.text} border-b ${theme.border} opacity-80`}>
-                  <th className="px-6 py-4 text-center w-24">학급</th>
-                  <th className="px-6 py-4 text-left">담임 교사</th>
-                  <th className="px-6 py-4 text-left">부담임 교사</th>
-                  <th className="px-6 py-4 text-center w-40">인원 (남/여)</th>
+                <tr className={`${theme.accent} text-[10px] font-black uppercase tracking-widest ${theme.text} border-b ${theme.border} opacity-80`}>
+                  <th className="px-3 py-3 text-center w-14">학급</th>
+                  <th className="px-3 py-3 text-left">담임</th>
+                  <th className="px-3 py-3 text-left">부담임</th>
+                  <th className="px-3 py-3 text-center w-24">인원</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white bg-white/40">
+              <tbody className="divide-y divide-white/20">
                 {gradeClasses.map((cls) => (
                   <tr key={cls.id} className={`${theme.rowHover} transition-colors group`}>
-                    <td className="px-6 py-5 text-center">
-                      <span className={`inline-block w-14 h-14 leading-[3.5rem] rounded-2xl bg-white shadow-sm font-black text-2xl ${theme.text} group-hover:scale-110 transition-transform`}>
+                    <td className="px-3 py-3 text-center">
+                      <span className={`inline-block w-10 h-10 leading-10 rounded-xl bg-white shadow-sm font-black text-lg ${theme.text} group-hover:scale-105 transition-transform`}>
                         {cls.classNumber}
                       </span>
                     </td>
-                    <td className="px-6 py-5 text-slate-800 font-bold text-base whitespace-nowrap">
+                    <td className="px-3 py-3 text-slate-800 font-bold text-lg whitespace-nowrap">
                       {cls.homeroomTeacher}
                     </td>
-                    <td className="px-6 py-5 text-slate-500 font-bold italic text-xs opacity-80 whitespace-nowrap">
+                    <td className="px-3 py-3 text-slate-500 font-bold italic text-sm opacity-80 whitespace-nowrap">
                       {cls.assistantTeacher || "—"}
                     </td>
-                    <td className="px-6 py-5 text-center whitespace-nowrap">
-                      <span className="font-black text-slate-800 text-2xl">{cls.boysCount + cls.girlsCount}</span>
-                      <span className="ml-2 text-base text-slate-400 font-mono font-black">({cls.boysCount}/{cls.girlsCount})</span>
+                    <td className="px-3 py-3 text-center whitespace-nowrap">
+                      <div className="flex flex-col items-center">
+                        <span className="font-black text-slate-800 text-lg">{cls.boysCount + cls.girlsCount}</span>
+                        <span className="text-[10px] text-slate-400 font-mono font-black">({cls.boysCount}/{cls.girlsCount})</span>
+                      </div>
                     </td>
                   </tr>
                 ))}

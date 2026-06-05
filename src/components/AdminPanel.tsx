@@ -110,25 +110,39 @@ export default function AdminPanel() {
         // Use defval to ensure all keys exist even if cell is empty
         const rawData = xlsx.utils.sheet_to_json(sheet, { defval: "" });
 
-        const formattedClasses = rawData.map((row: any) => {
+        if (!rawData || rawData.length === 0) {
+          alert("엑셀 파일에 데이터가 발견되지 않았습니다. 양식을 확인해주세요.");
+          return;
+        }
+
+        const formattedClasses = rawData.map((row: any, index: number) => {
           // Normalize keys by trimming
           const normalizedRow: any = {};
           Object.keys(row).forEach(key => {
-            normalizedRow[key.trim()] = row[key];
+            normalizedRow[key.toString().trim()] = row[key];
           });
 
+          // Detailed validation
+          const grade = parseInt(normalizedRow["학년"]);
+          const classNum = parseInt(normalizedRow["반"]);
+          
+          if (isNaN(grade) || isNaN(classNum)) {
+            console.warn(`Row ${index + 1} skipped: Invalid grade (${normalizedRow["학년"]}) or class (${normalizedRow["반"]})`);
+            return null;
+          }
+
           return {
-            grade: parseInt(normalizedRow["학년"]),
-            classNumber: parseInt(normalizedRow["반"]),
+            grade,
+            classNumber: classNum,
             homeroomTeacher: String(normalizedRow["담임"] || "").trim(),
             assistantTeacher: String(normalizedRow["부담임"] || "").trim(),
             boysCount: parseInt(normalizedRow["남"]) || 0,
             girlsCount: parseInt(normalizedRow["여"]) || 0,
           };
-        }).filter(c => !isNaN(c.grade) && !isNaN(c.classNumber));
+        }).filter(c => c !== null);
 
         if (formattedClasses.length === 0) {
-          alert("데이터가 없거나 양식이 올바르지 않습니다.");
+          alert("가져온 학급 정보가 없습니다. '학년', '반' 등의 헤더가 정확한지 확인해주세요.");
           return;
         }
 
@@ -510,9 +524,23 @@ export default function AdminPanel() {
 
             {activeTab === "events" && (
               <div className="space-y-6">
-                <div className="rounded-xl bg-blue-50 p-6 border border-blue-100">
-                  <h3 className="text-lg font-bold text-blue-900">월중 행사 일정 관리</h3>
-                  <p className="text-sm text-blue-700/70 font-medium">1일부터 31일까지 각 날짜의 행사 내용을 입력하세요.</p>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl bg-blue-50 p-6 border border-blue-100">
+                  <div>
+                    <h3 className="text-lg font-bold text-blue-900">월중 행사 일정 관리</h3>
+                    <p className="text-sm text-blue-700/70 font-medium">1일부터 31일까지 각 날짜의 행사 내용을 입력하세요.</p>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-blue-100 shadow-sm">
+                    <label className="text-xs font-black text-blue-400 uppercase tracking-tighter">Month Settings</label>
+                    <select 
+                      value={settings.currentMonth || new Date().getMonth() + 1}
+                      onChange={(e) => setSettings({ ...settings, currentMonth: parseInt(e.target.value) })}
+                      className="rounded-lg border-none bg-blue-50 px-3 py-1.5 text-sm font-bold text-blue-700 focus:ring-0"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                        <option key={m} value={m}>{m}월</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">

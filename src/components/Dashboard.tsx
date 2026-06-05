@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { storage } from "../lib/storage";
 import { SchoolSettings, ClassData, MonthlyEvent, Notice } from "../types";
 import ClassBoard from "./ClassBoard";
-import ScheduleBoard from "./ScheduleBoard";
 import EventBoard from "./EventBoard";
 import NoticeBoard from "./NoticeBoard";
 import { Link } from "react-router-dom";
@@ -131,106 +130,51 @@ export default function Dashboard() {
       </header>
 
       {/* Main Dashboard Area */}
-      <main className="grid grid-cols-12 gap-10 p-12">
-        
-        {/* Left Column: Vision & Notices */}
-        <div className="col-span-3 flex flex-col gap-10">
+      <main className="flex flex-col gap-8 p-10">
+        {/* Top Info Row */}
+        <div className="grid grid-cols-12 gap-8">
           {/* Vision Block */}
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="rounded-[3rem] border border-blue-50 bg-blue-50/40 p-12 shadow-sm backdrop-blur-sm"
-          >
-            <div className="mb-6 flex items-center gap-3">
-              <div className="h-10 w-2.5 rounded-full bg-blue-200"></div>
-              <h3 className="text-base font-black tracking-widest text-blue-400 uppercase">School Vision</h3>
+          <div className="col-span-3 rounded-[2.5rem] border border-blue-50 bg-blue-50/20 p-8 shadow-sm backdrop-blur-sm flex flex-col justify-center">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="h-6 w-1.5 rounded-full bg-blue-300"></div>
+              <h3 className="text-xs font-black tracking-widest text-blue-400 uppercase">Vision</h3>
             </div>
-            <div className="text-center px-4">
-              <p className="text-xl font-black leading-relaxed text-slate-700 italic underline decoration-blue-100 decoration-4 underline-offset-8">
+            <div className="text-center">
+              <p className="text-base font-black leading-relaxed text-slate-700 italic underline decoration-blue-100 decoration-2 underline-offset-4">
                 "{settings.schoolVision}"
               </p>
             </div>
-          </motion.div>
+          </div>
           
           {/* Notice Block */}
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="rounded-[3rem] border border-orange-50 bg-orange-50/40 p-12 shadow-sm backdrop-blur-sm"
-          >
-            <div className="mb-6 flex items-center justify-between">
+          {/* Notice Block */}
+          <div className="col-span-3 rounded-[2.5rem] border border-orange-50 bg-orange-50/20 p-8 shadow-sm backdrop-blur-sm overflow-hidden flex flex-col">
+            <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-2.5 rounded-full bg-orange-200"></div>
-                <h3 className="text-base font-black tracking-widest text-orange-400 uppercase">Notice</h3>
+                <div className="h-6 w-1.5 rounded-full bg-orange-300"></div>
+                <h3 className="text-xs font-black tracking-widest text-orange-500 uppercase">Notice</h3>
               </div>
-              <span className="font-mono text-xs font-black text-orange-200">전달사항</span>
+              <span className="font-mono text-[10px] font-black text-orange-200">전달사항</span>
             </div>
-            <div>
+            <div className="overflow-y-auto px-4 flex-1">
               <NoticeBoard notices={notices} />
             </div>
-          </motion.div>
-
-          {/* Events Block - Moved here */}
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.15 }}
-            className="rounded-[3rem] border border-red-50 bg-red-50/40 p-12 shadow-sm backdrop-blur-sm"
-          >
-            <div className="mb-6 flex items-center gap-3">
-              <div className="h-10 w-2.5 rounded-full bg-red-200"></div>
-              <h3 className="text-base font-black tracking-widest text-red-400 uppercase">{settings.currentMonth || new Date().getMonth() + 1}월중 계획</h3>
-            </div>
-            <div>
-              <EventBoard events={events} />
-            </div>
-          </motion.div>
+          </div>
         </div>
 
-        {/* Center: Class Status Board */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="col-span-6 rounded-[3.5rem] border border-indigo-50 bg-indigo-50/20 p-12 shadow-sm backdrop-blur-sm"
-        >
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-2.5 rounded-full bg-indigo-200"></div>
-              <h3 className="text-base font-black tracking-widest text-indigo-400 uppercase">Class Status</h3>
-            </div>
-            <div className="flex gap-4">
-              <span className="rounded-2xl bg-white px-6 py-2 text-sm font-black text-slate-600 shadow-sm border border-indigo-50/50">
-                총 {classes.length}학급
-              </span>
-              <span className="rounded-2xl bg-indigo-400 text-white px-6 py-2 text-sm font-black shadow-lg">
-                전체 {classes.reduce((acc, c) => acc + c.boysCount + c.girlsCount, 0)}명
-              </span>
-            </div>
-          </div>
-          
-          <div>
-            <ClassBoard classes={classes} />
-          </div>
-        </motion.div>
-
-        {/* Right Column: Timetable */}
-        <div className="col-span-3 flex flex-col gap-10">
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="rounded-[3rem] border border-emerald-50 bg-emerald-50/40 p-12 shadow-sm backdrop-blur-sm"
-          >
-            <div className="mb-6 flex items-center gap-3">
-              <div className="h-10 w-2.5 rounded-full bg-emerald-200"></div>
-              <h3 className="text-base font-black tracking-widest text-emerald-400 uppercase">시정표</h3>
-            </div>
-            <div>
-              <ScheduleBoard settings={settings} />
-            </div>
-          </motion.div>
+        {/* Classes Board: 3 Columns for 3 Grades */}
+        <div className="grid grid-cols-3 gap-8">
+          {[1, 2, 3].map((grade, idx) => (
+            <motion.div 
+              key={grade}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 + (idx * 0.1) }}
+              className="flex flex-col"
+            >
+              <ClassBoard classes={classes} grade={grade} />
+            </motion.div>
+          ))}
         </div>
       </main>
 
