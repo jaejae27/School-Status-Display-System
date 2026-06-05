@@ -19,8 +19,6 @@ export default function AdminPanel() {
     address: "",
     logoUrl: "",
     schoolType: "high",
-    firstPeriodStartTime: "08:30",
-    assemblyTime: "08:10",
   });
 
   const [classes, setClasses] = useState<ClassData[]>([]);
@@ -190,10 +188,10 @@ export default function AdminPanel() {
     const data = await res.json();
 
     if (res.ok) {
-      const isGAS = typeof window !== 'undefined' && (window as any).google && (window as any).google.script;
+      const currentMonth = settings.currentMonth || new Date().getMonth() + 1;
       const newEvents = Object.entries(data).filter(([_, content]) => !!content).map(([day, content]) => ({
         id: Math.random().toString(36).substr(2, 9),
-        date: day,
+        date: day.includes("-") ? day : `${currentMonth}-${day}`,
         content: content as string
       }));
 
@@ -353,24 +351,6 @@ export default function AdminPanel() {
                       value={settings.faxNumber || ""}
                       onChange={(e) => setSettings({ ...settings, faxNumber: e.target.value })}
                       placeholder="02-123-4568"
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all font-medium"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">1교시 시작 시간</label>
-                    <input 
-                      type="time" 
-                      value={settings.firstPeriodStartTime}
-                      onChange={(e) => setSettings({ ...settings, firstPeriodStartTime: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all font-medium"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">조회 시간 (미입력 시 제외)</label>
-                    <input 
-                      type="time" 
-                      value={settings.assemblyTime}
-                      onChange={(e) => setSettings({ ...settings, assemblyTime: e.target.value })}
                       className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all font-medium"
                     />
                   </div>
@@ -545,7 +525,9 @@ export default function AdminPanel() {
                 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
-                    const event = events.find(e => parseInt(e.date) === day);
+                    const currentMonth = settings.currentMonth || new Date().getMonth() + 1;
+                    const dateKey = `${currentMonth}-${day}`;
+                    const event = events.find(e => e.date === dateKey || (e.date === day.toString() && currentMonth === (new Date().getMonth() + 1)));
                     return (
                       <div key={day} className="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
                         <label className="text-xs font-black text-slate-400 flex items-center gap-2">
@@ -555,14 +537,15 @@ export default function AdminPanel() {
                         <input 
                           type="text" 
                           defaultValue={event?.content || ""}
+                          key={`${dateKey}-${event?.content}`}
                           onBlur={async (e) => {
                             const val = e.target.value;
                             if (event) {
                               if (val !== event.content) {
-                                await storage.updateEvent({ ...event, content: val });
+                                await storage.updateEvent({ ...event, date: dateKey, content: val });
                               }
                             } else if (val) {
-                              await storage.updateEvent({ id: Math.random().toString(36).substr(2, 9), date: day.toString(), content: val });
+                              await storage.updateEvent({ id: Math.random().toString(36).substr(2, 9), date: dateKey, content: val });
                             }
                           }}
                           placeholder="행사 내용 입력"

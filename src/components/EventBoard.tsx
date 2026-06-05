@@ -8,9 +8,15 @@ interface Props {
 export default function EventBoard({ events }: Props) {
   const sortedEvents = useMemo(() => {
     return [...events].sort((a, b) => {
-      const dayA = parseInt(a.date.includes("-") ? a.date.split("-")[2] : a.date);
-      const dayB = parseInt(b.date.includes("-") ? b.date.split("-")[2] : b.date);
-      return dayA - dayB;
+      const getDay = (dateStr: string) => {
+        if (dateStr.includes("-")) {
+          const parts = dateStr.split("-");
+          // If YYYY-MM-DD it's parts[2], if M-D it's parts[1]
+          return parseInt(parts.length === 3 ? parts[2] : parts[1]);
+        }
+        return parseInt(dateStr);
+      };
+      return getDay(a.date) - getDay(b.date);
     });
   }, [events]);
 
@@ -26,7 +32,14 @@ export default function EventBoard({ events }: Props) {
           </thead>
           <tbody className="divide-y divide-red-50">
             {sortedEvents.map((e) => {
-              const day = e.date.includes("-") ? e.date.split("-")[2] : e.date;
+              const getDayDisplay = (dateStr: string) => {
+                if (dateStr.includes("-")) {
+                  const parts = dateStr.split("-");
+                  return parts.length === 3 ? parts[2] : parts[1];
+                }
+                return dateStr;
+              };
+              const day = getDayDisplay(e.date);
               return (
                 <tr key={e.id} className="hover:bg-red-50/30 transition-colors">
                   <td className="px-4 py-3 text-center">

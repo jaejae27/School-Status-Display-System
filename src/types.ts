@@ -12,8 +12,6 @@ export interface SchoolSettings {
   logoUrl?: string;
   schoolType: SchoolType;
   genderType?: 'boys' | 'girls' | 'coed';
-  firstPeriodStartTime: string; // HH:mm
-  assemblyTime: string; // HH:mm
   phoneNumber?: string;
   faxNumber?: string;
   currentMonth?: number;

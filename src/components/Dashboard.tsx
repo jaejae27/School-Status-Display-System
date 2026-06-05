@@ -134,7 +134,59 @@ export default function Dashboard() {
 
       {/* Main Dashboard Area */}
       <main className="flex flex-col gap-8 p-10">
-        {/* Top Info Row */}
+        {/* Statistics Row */}
+        <div className="flex gap-8">
+           <div className="flex-1 rounded-[2.5rem] bg-indigo-50/30 border border-indigo-100/50 p-6 flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="h-8 w-1.5 rounded-full bg-indigo-400"></div>
+                <div>
+                  <h3 className="text-base font-black tracking-tighter text-indigo-600">전교생 현황</h3>
+                  <p className="text-[9px] font-bold text-indigo-300 uppercase tracking-widest leading-none">School Enrollment Status</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-12">
+                <div className="text-center">
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">총 학급</div>
+                  <div className="text-2xl font-black text-slate-700">{classes.length}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">남학생</div>
+                  <div className="text-2xl font-black text-blue-500">{classes.reduce((acc, c) => acc + (c.boysCount || 0), 0)}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">여학생</div>
+                  <div className="text-2xl font-black text-pink-500">{classes.reduce((acc, c) => acc + (c.girlsCount || 0), 0)}</div>
+                </div>
+                <div className="h-12 w-px bg-slate-100"></div>
+                <div className="flex items-center gap-5 px-8 py-3 bg-indigo-500 rounded-[1.5rem] shadow-xl shadow-indigo-100 transition-transform hover:scale-105">
+                  <div className="text-right">
+                    <div className="text-[9px] font-black text-indigo-100 uppercase tracking-widest">전체 인원</div>
+                    <div className="text-[10px] font-bold text-indigo-200">TOTAL STUDENTS</div>
+                  </div>
+                  <div className="text-4xl font-black text-white tracking-tighter">
+                    {classes.reduce((acc, c) => acc + (c.boysCount || 0) + (c.girlsCount || 0), 0)}
+                  </div>
+                </div>
+              </div>
+           </div>
+        </div>
+
+        {/* Classes Board: 3 Columns for 3 Grades */}
+        <div className="grid grid-cols-3 gap-8">
+          {[1, 2, 3].map((grade, idx) => (
+            <motion.div 
+              key={grade}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 + (idx * 0.1) }}
+              className="flex flex-col"
+            >
+              <ClassBoard classes={classes} grade={grade} />
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Info Row (Notice & Events) */}
         <div className="grid grid-cols-2 gap-8">
           {/* Notice Block */}
           <div className="rounded-[2.5rem] border border-orange-50 bg-orange-50/20 p-8 shadow-sm backdrop-blur-sm overflow-hidden flex flex-col h-[300px]">
@@ -160,61 +212,19 @@ export default function Dashboard() {
               <span className="font-mono text-xs font-black text-red-200 uppercase">Monthly Events</span>
             </div>
             <div className="overflow-y-auto px-4 flex-1">
-              <EventBoard events={events} />
+              <EventBoard 
+                events={events.filter(e => {
+                  const currentMonth = settings.currentMonth || new Date().getMonth() + 1;
+                  // Handle both M-D and old day-only format (assume old format matches current month if not specified)
+                  if (!e.date.includes("-")) {
+                    // If it's a simple day string, only show if we are on the current system month and it matches currentMonth setting
+                    return currentMonth === (new Date().getMonth() + 1);
+                  }
+                  return e.date.startsWith(`${currentMonth}-`);
+                })} 
+              />
             </div>
           </div>
-        </div>
-
-        {/* Statistics Row */}
-        <div className="flex gap-8">
-           <div className="flex-1 rounded-[2.5rem] bg-indigo-50/30 border border-indigo-100/50 p-8 flex items-center justify-between shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-2 rounded-full bg-indigo-400"></div>
-                <div>
-                  <h3 className="text-lg font-black tracking-tighter text-indigo-600">전교생 현황</h3>
-                  <p className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">School Enrollment Status</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-16">
-                <div className="text-center">
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">총 학급</div>
-                  <div className="text-3xl font-black text-slate-700">{classes.length}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">남학생</div>
-                  <div className="text-3xl font-black text-blue-500">{classes.reduce((acc, c) => acc + (c.boysCount || 0), 0)}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">여학생</div>
-                  <div className="text-3xl font-black text-pink-500">{classes.reduce((acc, c) => acc + (c.girlsCount || 0), 0)}</div>
-                </div>
-                <div className="h-16 w-px bg-slate-100"></div>
-                <div className="flex items-center gap-6 px-10 py-4 bg-indigo-500 rounded-[2rem] shadow-xl shadow-indigo-100 transition-transform hover:scale-105">
-                  <div className="text-right">
-                    <div className="text-[10px] font-black text-indigo-100 uppercase tracking-widest">전체 인원</div>
-                    <div className="text-xs font-bold text-indigo-200">TOTAL STUDENTS</div>
-                  </div>
-                  <div className="text-5xl font-black text-white tracking-tighter">
-                    {classes.reduce((acc, c) => acc + (c.boysCount || 0) + (c.girlsCount || 0), 0)}
-                  </div>
-                </div>
-              </div>
-           </div>
-        </div>
-
-        {/* Classes Board: 3 Columns for 3 Grades */}
-        <div className="grid grid-cols-3 gap-8">
-          {[1, 2, 3].map((grade, idx) => (
-            <motion.div 
-              key={grade}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 + (idx * 0.1) }}
-              className="flex flex-col"
-            >
-              <ClassBoard classes={classes} grade={grade} />
-            </motion.div>
-          ))}
         </div>
       </main>
 
