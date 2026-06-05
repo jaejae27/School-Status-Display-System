@@ -59,6 +59,7 @@ export default function ClassBoard({ classes, grade: filterGrade }: Props) {
         
         if (gradeClasses.length === 0) return null;
         const theme = getGradeTheme(grade);
+        const gradeTotal = gradeClasses.reduce((acc, c) => acc + (c.boysCount || 0) + (c.girlsCount || 0), 0);
 
         return (
           <div key={grade} className={`rounded-[2rem] border ${theme.border} ${theme.bg} overflow-hidden shadow-sm backdrop-blur-sm flex flex-col h-full`}>
@@ -66,8 +67,8 @@ export default function ClassBoard({ classes, grade: filterGrade }: Props) {
               <h4 className="text-xl font-black">
                 {grade}학년
               </h4>
-              <span className="text-[10px] font-black opacity-90 uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">
-                {gradeClasses.length} C
+              <span className="text-[10px] font-black opacity-90 uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">
+                {gradeTotal}명
               </span>
             </div>
             <table className="w-full text-sm border-collapse">

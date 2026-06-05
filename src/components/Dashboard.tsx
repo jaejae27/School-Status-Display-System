@@ -95,14 +95,17 @@ export default function Dashboard() {
             <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-xs font-bold text-slate-400">
               <span className="bg-indigo-50 text-indigo-500 px-2.5 py-0.5 rounded-full ring-1 ring-indigo-100 uppercase tracking-widest">{settings.schoolType === 'elementary' ? 'Elementary' : settings.schoolType === 'middle' ? 'Middle' : 'High'} School</span>
               <span className="opacity-70">📍 {settings.address}</span>
+              {(settings.phoneNumber || settings.faxNumber) && <div className="h-2 w-px bg-slate-200"></div>}
               {settings.phoneNumber && (
-                <span className="flex items-center gap-1.5">
-                  <span className="opacity-60 text-[9px]">📞</span> {settings.phoneNumber}
+                <span className="flex items-center gap-1.5 bg-slate-100/50 px-2 py-0.5 rounded-md">
+                  <span className="opacity-40 text-[9px] font-black uppercase tracking-tighter">Tel</span>
+                  <span className="text-slate-500">{settings.phoneNumber}</span>
                 </span>
               )}
               {settings.faxNumber && (
-                <span className="flex items-center gap-1.5">
-                  <span className="opacity-60 text-[9px]">📠</span> {settings.faxNumber}
+                <span className="flex items-center gap-1.5 bg-slate-100/50 px-2 py-0.5 rounded-md">
+                  <span className="opacity-40 text-[9px] font-black uppercase tracking-tighter">Fax</span>
+                  <span className="text-slate-500">{settings.faxNumber}</span>
                 </span>
               )}
             </div>
@@ -132,34 +135,71 @@ export default function Dashboard() {
       {/* Main Dashboard Area */}
       <main className="flex flex-col gap-8 p-10">
         {/* Top Info Row */}
-        <div className="grid grid-cols-12 gap-8">
-          {/* Vision Block */}
-          <div className="col-span-3 rounded-[2.5rem] border border-blue-50 bg-blue-50/20 p-8 shadow-sm backdrop-blur-sm flex flex-col justify-center">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="h-6 w-1.5 rounded-full bg-blue-300"></div>
-              <h3 className="text-xs font-black tracking-widest text-blue-400 uppercase">Vision</h3>
-            </div>
-            <div className="text-center">
-              <p className="text-base font-black leading-relaxed text-slate-700 italic underline decoration-blue-100 decoration-2 underline-offset-4">
-                "{settings.schoolVision}"
-              </p>
-            </div>
-          </div>
-          
+        <div className="grid grid-cols-2 gap-8">
           {/* Notice Block */}
-          {/* Notice Block */}
-          <div className="col-span-3 rounded-[2.5rem] border border-orange-50 bg-orange-50/20 p-8 shadow-sm backdrop-blur-sm overflow-hidden flex flex-col">
+          <div className="rounded-[2.5rem] border border-orange-50 bg-orange-50/20 p-8 shadow-sm backdrop-blur-sm overflow-hidden flex flex-col h-[300px]">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-6 w-1.5 rounded-full bg-orange-300"></div>
-                <h3 className="text-xs font-black tracking-widest text-orange-500 uppercase">Notice</h3>
+                <h3 className="text-sm font-black tracking-widest text-orange-500 uppercase">Notice</h3>
               </div>
-              <span className="font-mono text-[10px] font-black text-orange-200">전달사항</span>
+              <span className="font-mono text-xs font-black text-orange-200 uppercase">전달사항</span>
             </div>
             <div className="overflow-y-auto px-4 flex-1">
               <NoticeBoard notices={notices} />
             </div>
           </div>
+
+          {/* Events Block */}
+          <div className="rounded-[2.5rem] border border-red-50 bg-red-50/20 p-8 shadow-sm backdrop-blur-sm overflow-hidden flex flex-col h-[300px]">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-6 w-1.5 rounded-full bg-red-300"></div>
+                <h3 className="text-sm font-black tracking-widest text-red-500 uppercase">{settings.currentMonth || new Date().getMonth() + 1}월중 계획</h3>
+              </div>
+              <span className="font-mono text-xs font-black text-red-200 uppercase">Monthly Events</span>
+            </div>
+            <div className="overflow-y-auto px-4 flex-1">
+              <EventBoard events={events} />
+            </div>
+          </div>
+        </div>
+
+        {/* Statistics Row */}
+        <div className="flex gap-8">
+           <div className="flex-1 rounded-[2.5rem] bg-indigo-50/30 border border-indigo-100/50 p-8 flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="h-10 w-2 rounded-full bg-indigo-400"></div>
+                <div>
+                  <h3 className="text-lg font-black tracking-tighter text-indigo-600">전교생 현황</h3>
+                  <p className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">School Enrollment Status</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-16">
+                <div className="text-center">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">총 학급</div>
+                  <div className="text-3xl font-black text-slate-700">{classes.length}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">남학생</div>
+                  <div className="text-3xl font-black text-blue-500">{classes.reduce((acc, c) => acc + (c.boysCount || 0), 0)}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">여학생</div>
+                  <div className="text-3xl font-black text-pink-500">{classes.reduce((acc, c) => acc + (c.girlsCount || 0), 0)}</div>
+                </div>
+                <div className="h-16 w-px bg-slate-100"></div>
+                <div className="flex items-center gap-6 px-10 py-4 bg-indigo-500 rounded-[2rem] shadow-xl shadow-indigo-100 transition-transform hover:scale-105">
+                  <div className="text-right">
+                    <div className="text-[10px] font-black text-indigo-100 uppercase tracking-widest">전체 인원</div>
+                    <div className="text-xs font-bold text-indigo-200">TOTAL STUDENTS</div>
+                  </div>
+                  <div className="text-5xl font-black text-white tracking-tighter">
+                    {classes.reduce((acc, c) => acc + (c.boysCount || 0) + (c.girlsCount || 0), 0)}
+                  </div>
+                </div>
+              </div>
+           </div>
         </div>
 
         {/* Classes Board: 3 Columns for 3 Grades */}
