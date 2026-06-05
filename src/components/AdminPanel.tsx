@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { db, auth } from "../lib/firebase";
-import { collection, onSnapshot, doc, setDoc, addDoc, deleteDoc, writeBatch } from "firebase/firestore";
+import { storage } from "../lib/storage";
 import { SchoolSettings, ClassData, MonthlyEvent, Notice } from "../types";
 import { ArrowLeft, Save, Upload, Download, Plus, Trash2, ShieldCheck, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import * as xlsx from "xlsx";
+import { doc, collection, writeBatch } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 type Tab = "general" | "classes" | "events" | "notices";
 
@@ -27,29 +28,34 @@ export default function AdminPanel() {
   const [notices, setNotices] = useState<Notice[]>([]);
 
   useEffect(() => {
-    const unsubSettings = onSnapshot(doc(db, "settings", "config"), (doc) => {
-      if (doc.exists()) setSettings(doc.data() as SchoolSettings);
-    });
-    const unsubClasses = onSnapshot(collection(db, "classes"), (snapshot) => {
-      setClasses(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ClassData)));
-    });
-    const unsubEvents = onSnapshot(collection(db, "events"), (snapshot) => {
-      setEvents(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as MonthlyEvent)));
-    });
-    const unsubNotices = onSnapshot(collection(db, "notices"), (snapshot) => {
-      setNotices(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Notice)));
+    const fetchData = async () => {
+      const s = await storage.getSettings();
+      if (s) setSettings(s);
+      
+      const c = await storage.getClasses();
+      setClasses(c);
+      
+      const e = await storage.getEvents();
+      setEvents(e);
+      
+      const n = await storage.getNotices();
+      setNotices(n);
+    };
+
+    fetchData();
+
+    const unsubscribe = storage.onDataUpdate((data) => {
+      if (data.settings) setSettings(data.settings);
+      setClasses(data.classes);
+      setEvents(data.events);
+      setNotices(data.notices);
     });
 
-    return () => {
-      unsubSettings();
-      unsubClasses();
-      unsubEvents();
-      unsubNotices();
-    };
+    return () => unsubscribe();
   }, []);
 
   const saveSettings = async () => {
-    await setDoc(doc(db, "settings", "config"), settings);
+    await storage.saveSettings(settings);
     alert("설정이 저장되었습니다.");
   };
 
@@ -66,14 +72,16 @@ export default function AdminPanel() {
 
   // Class Management
   const addClass = async () => {
-    await addDoc(collection(db, "classes"), {
+    const newClass: ClassData = {
+      id: Math.random().toString(36).substr(2, 9),
       grade: 1,
       classNumber: classes.length + 1,
       homeroomTeacher: "",
       assistantTeacher: "",
       boysCount: 0,
       girlsCount: 0,
-    });
+    };
+    await storage.updateClass(newClass);
   };
 
   const downloadClassTemplate = () => {
@@ -91,33 +99,72 @@ export default function AdminPanel() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("file", file);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const dataBuffer = event.target?.result as ArrayBuffer;
+        const workbook = xlsx.read(dataBuffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        
+        // Use defval to ensure all keys exist even if cell is empty
+        const rawData = xlsx.utils.sheet_to_json(sheet, { defval: "" });
 
-    const res = await fetch("/api/upload/classes", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
+        const formattedClasses = rawData.map((row: any) => {
+          // Normalize keys by trimming
+          const normalizedRow: any = {};
+          Object.keys(row).forEach(key => {
+            normalizedRow[key.trim()] = row[key];
+          });
 
-    if (res.ok) {
-      const batch = writeBatch(db);
-      // Delete existing classes (optional, user asked to batch update)
-      classes.forEach((c) => batch.delete(doc(db, "classes", c.id)));
-      // Add new classes
-      data.forEach((c: any) => {
-        const newRef = doc(collection(db, "classes"));
-        batch.set(newRef, c);
-      });
-      await batch.commit();
-      alert("학급 정보가 일괄 업데이트되었습니다.");
-    }
+          return {
+            grade: parseInt(normalizedRow["학년"]),
+            classNumber: parseInt(normalizedRow["반"]),
+            homeroomTeacher: String(normalizedRow["담임"] || "").trim(),
+            assistantTeacher: String(normalizedRow["부담임"] || "").trim(),
+            boysCount: parseInt(normalizedRow["남"]) || 0,
+            girlsCount: parseInt(normalizedRow["여"]) || 0,
+          };
+        }).filter(c => !isNaN(c.grade) && !isNaN(c.classNumber));
+
+        if (formattedClasses.length === 0) {
+          alert("데이터가 없거나 양식이 올바르지 않습니다.");
+          return;
+        }
+
+        const isGAS = typeof window !== 'undefined' && (window as any).google && (window as any).google.script;
+        if (isGAS) {
+          await storage.saveClasses(formattedClasses.map((c: any) => ({ ...c, id: Math.random().toString(36).substr(2, 9) })));
+        } else {
+          const batch = writeBatch(db);
+          // Delete existing classes
+          classes.forEach((c) => batch.delete(doc(db, "classes", c.id)));
+          // Add new classes
+          formattedClasses.forEach((c: any) => {
+            const newRef = doc(collection(db, "classes"));
+            batch.set(newRef, c);
+          });
+          await batch.commit();
+        }
+        alert(`학급 정보 ${formattedClasses.length}개가 업데이트되었습니다.`);
+      } catch (err) {
+        console.error("Excel parse error:", err);
+        alert("엑셀 파일 파싱에 실패했습니다.");
+      }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   // Event Management
   const uploadEvents = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const isGAS = typeof window !== 'undefined' && (window as any).google && (window as any).google.script;
+    if (isGAS) {
+      alert("AI 일정 추출 기능은 AI Studio 환경에서만 지원됩니다. GAS 환경에서는 수동으로 입력해주세요.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", file);
@@ -129,17 +176,24 @@ export default function AdminPanel() {
     const data = await res.json();
 
     if (res.ok) {
-      const batch = writeBatch(db);
-      // Delete existing
-      events.forEach((ev) => batch.delete(doc(db, "events", ev.id)));
-      // Add new
-      Object.entries(data).forEach(([day, content]) => {
-        if (content) {
+      const isGAS = typeof window !== 'undefined' && (window as any).google && (window as any).google.script;
+      const newEvents = Object.entries(data).filter(([_, content]) => !!content).map(([day, content]) => ({
+        id: Math.random().toString(36).substr(2, 9),
+        date: day,
+        content: content as string
+      }));
+
+      if (isGAS) {
+        await storage.saveEvents(newEvents);
+      } else {
+        const batch = writeBatch(db);
+        events.forEach((ev) => batch.delete(doc(db, "events", ev.id)));
+        newEvents.forEach((ev) => {
           const newRef = doc(collection(db, "events"));
-          batch.set(newRef, { date: day, content });
-        }
-      });
-      await batch.commit();
+          batch.set(newRef, { date: ev.date, content: ev.content });
+        });
+        await batch.commit();
+      }
       alert("월중 행사가 업데이트되었습니다.");
     }
   };
@@ -147,10 +201,12 @@ export default function AdminPanel() {
   // Notice Management
   const addNotice = async (content: string) => {
     if (!content) return;
-    await addDoc(collection(db, "notices"), {
+    const newNotice: Notice = {
+      id: Math.random().toString(36).substr(2, 9),
       content,
       createdAt: Date.now(),
-    });
+    };
+    await storage.addNotice(newNotice);
   };
 
   return (
@@ -306,14 +362,15 @@ export default function AdminPanel() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700">표시 월 (월중 계획 제목)</label>
-                    <input 
-                      type="number" 
-                      min="1"
-                      max="12"
+                    <select 
                       value={settings.currentMonth || new Date().getMonth() + 1}
                       onChange={(e) => setSettings({ ...settings, currentMonth: parseInt(e.target.value) })}
                       className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all font-medium"
-                    />
+                    >
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                        <option key={m} value={m}>{m}월</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 
@@ -379,14 +436,14 @@ export default function AdminPanel() {
                               <input 
                                 type="number" 
                                 value={cls.grade}
-                                onChange={(e) => setDoc(doc(db, "classes", cls.id), { ...cls, grade: parseInt(e.target.value) })}
+                                onChange={(e) => storage.updateClass({ ...cls, grade: parseInt(e.target.value) })}
                                 className="w-12 rounded-lg bg-slate-50 px-2 py-1 outline-none text-center font-bold"
                               />
                               <span className="text-slate-400">/</span>
                               <input 
                                 type="number" 
                                 value={cls.classNumber}
-                                onChange={(e) => setDoc(doc(db, "classes", cls.id), { ...cls, classNumber: parseInt(e.target.value) })}
+                                onChange={(e) => storage.updateClass({ ...cls, classNumber: parseInt(e.target.value) })}
                                 className="w-12 rounded-lg bg-slate-50 px-2 py-1 outline-none text-center font-bold"
                               />
                             </div>
@@ -394,16 +451,24 @@ export default function AdminPanel() {
                           <td className="px-4 py-2">
                             <input 
                               type="text" 
-                              value={cls.homeroomTeacher}
-                              onChange={(e) => setDoc(doc(db, "classes", cls.id), { ...cls, homeroomTeacher: e.target.value })}
+                              defaultValue={cls.homeroomTeacher}
+                              onBlur={(e) => {
+                                if (e.target.value !== cls.homeroomTeacher) {
+                                  storage.updateClass({ ...cls, homeroomTeacher: e.target.value });
+                                }
+                              }}
                               className="w-full rounded-lg bg-slate-50 px-3 py-1 outline-none font-bold"
                             />
                           </td>
                           <td className="px-4 py-2">
                             <input 
                               type="text" 
-                              value={cls.assistantTeacher}
-                              onChange={(e) => setDoc(doc(db, "classes", cls.id), { ...cls, assistantTeacher: e.target.value })}
+                              defaultValue={cls.assistantTeacher}
+                              onBlur={(e) => {
+                                if (e.target.value !== cls.assistantTeacher) {
+                                  storage.updateClass({ ...cls, assistantTeacher: e.target.value });
+                                }
+                              }}
                               className="w-full rounded-lg bg-slate-50 px-3 py-1 outline-none"
                             />
                           </td>
@@ -412,7 +477,7 @@ export default function AdminPanel() {
                               <input 
                                 type="number" 
                                 value={cls.boysCount}
-                                onChange={(e) => setDoc(doc(db, "classes", cls.id), { ...cls, boysCount: parseInt(e.target.value) || 0 })}
+                                onChange={(e) => storage.updateClass({ ...cls, boysCount: parseInt(e.target.value) || 0 })}
                                 className="w-16 rounded-lg bg-slate-50 px-2 py-1 outline-none text-center"
                               />
                             </td>
@@ -422,14 +487,14 @@ export default function AdminPanel() {
                               <input 
                                 type="number" 
                                 value={cls.girlsCount}
-                                onChange={(e) => setDoc(doc(db, "classes", cls.id), { ...cls, girlsCount: parseInt(e.target.value) || 0 })}
+                                onChange={(e) => storage.updateClass({ ...cls, girlsCount: parseInt(e.target.value) || 0 })}
                                 className="w-16 rounded-lg bg-slate-50 px-2 py-1 outline-none text-center"
                               />
                             </td>
                           )}
                           <td className="p-2">
                             <button 
-                              onClick={() => deleteDoc(doc(db, "classes", cls.id))}
+                              onClick={() => storage.deleteClass(cls.id)}
                               className="text-slate-300 hover:text-red-500 transition-colors"
                             >
                               <Trash2 size={16} />
@@ -445,34 +510,35 @@ export default function AdminPanel() {
 
             {activeTab === "events" && (
               <div className="space-y-6">
-                <div className="rounded-xl bg-purple-50 p-6 border border-purple-100 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold text-purple-900">AI 기반 월중 행사 입력</h3>
-                    <p className="text-sm text-purple-700/70 font-medium">엑셀이나 HWP 파일을 업로드하면 AI가 자동으로 일정을 추출합니다.</p>
-                  </div>
-                  <label className="flex cursor-pointer items-center gap-2 rounded-xl bg-purple-600 px-6 py-3 font-bold text-white shadow-lg shadow-purple-200 transition-all hover:bg-purple-700 active:scale-95">
-                    <Upload size={18} /> 파일 올리기
-                    <input type="file" onChange={uploadEvents} className="hidden" />
-                  </label>
+                <div className="rounded-xl bg-blue-50 p-6 border border-blue-100">
+                  <h3 className="text-lg font-bold text-blue-900">월중 행사 일정 관리</h3>
+                  <p className="text-sm text-blue-700/70 font-medium">1일부터 31일까지 각 날짜의 행사 내용을 입력하세요.</p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
                     const event = events.find(e => parseInt(e.date) === day);
                     return (
-                      <div key={day} className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400">{day}일</label>
+                      <div key={day} className="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
+                        <label className="text-xs font-black text-slate-400 flex items-center gap-2">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-slate-200 text-slate-600 text-[10px]">{day}</span>
+                          날짜
+                        </label>
                         <input 
                           type="text" 
-                          value={event?.content || ""}
-                          onChange={async (e) => {
+                          defaultValue={event?.content || ""}
+                          onBlur={async (e) => {
+                            const val = e.target.value;
                             if (event) {
-                              await setDoc(doc(db, "events", event.id), { ...event, content: e.target.value });
-                            } else {
-                              await addDoc(collection(db, "events"), { date: day.toString(), content: e.target.value });
+                              if (val !== event.content) {
+                                await storage.updateEvent({ ...event, content: val });
+                              }
+                            } else if (val) {
+                              await storage.updateEvent({ id: Math.random().toString(36).substr(2, 9), date: day.toString(), content: val });
                             }
                           }}
-                          className="w-full rounded-lg border border-slate-100 bg-slate-50 px-3 py-1.5 text-xs outline-none focus:border-purple-300 focus:bg-white transition-all font-medium"
+                          placeholder="행사 내용 입력"
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-blue-500 transition-all font-bold text-slate-700"
                         />
                       </div>
                     );
@@ -508,7 +574,7 @@ export default function AdminPanel() {
                     <div key={notice.id} className="flex items-start justify-between gap-4 rounded-xl border border-slate-100 p-4">
                       <p className="text-sm text-slate-600 whitespace-pre-wrap">{notice.content}</p>
                       <button 
-                        onClick={() => deleteDoc(doc(db, "notices", notice.id))}
+                        onClick={() => storage.deleteNotice(notice.id)}
                         className="shrink-0 text-slate-300 hover:text-red-500"
                       >
                         <Trash2 size={16} />

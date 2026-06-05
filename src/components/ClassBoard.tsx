@@ -86,10 +86,10 @@ export default function ClassBoard({ classes }: Props) {
                         {cls.classNumber}
                       </span>
                     </td>
-                    <td className="px-6 py-5 text-slate-800 font-bold text-lg whitespace-nowrap">
+                    <td className="px-6 py-5 text-slate-800 font-bold text-base whitespace-nowrap">
                       {cls.homeroomTeacher}
                     </td>
-                    <td className="px-6 py-5 text-slate-500 font-bold italic text-sm opacity-80 whitespace-nowrap">
+                    <td className="px-6 py-5 text-slate-500 font-bold italic text-xs opacity-80 whitespace-nowrap">
                       {cls.assistantTeacher || "—"}
                     </td>
                     <td className="px-6 py-5 text-center whitespace-nowrap">

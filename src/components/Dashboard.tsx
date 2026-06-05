@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, doc } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { storage } from "../lib/storage";
 import { SchoolSettings, ClassData, MonthlyEvent, Notice } from "../types";
 import ClassBoard from "./ClassBoard";
 import ScheduleBoard from "./ScheduleBoard";
@@ -15,33 +14,53 @@ export default function Dashboard() {
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [events, setEvents] = useState<MonthlyEvent[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubSettings = onSnapshot(doc(db, "settings", "config"), (doc) => {
-      if (doc.exists()) setSettings(doc.data() as SchoolSettings);
-    });
-
-    const unsubClasses = onSnapshot(collection(db, "classes"), (snapshot) => {
-      setClasses(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ClassData)));
-    });
-
-    const unsubEvents = onSnapshot(collection(db, "events"), (snapshot) => {
-      setEvents(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as MonthlyEvent)));
-    });
-
-    const unsubNotices = onSnapshot(collection(db, "notices"), (snapshot) => {
-      setNotices(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Notice)));
-    });
-
-    return () => {
-      unsubSettings();
-      unsubClasses();
-      unsubEvents();
-      unsubNotices();
+    // Initial fetch
+    const fetchData = async () => {
+      try {
+        const s = await storage.getSettings();
+        const c = await storage.getClasses();
+        const e = await storage.getEvents();
+        const n = await storage.getNotices();
+        
+        setSettings(s);
+        setClasses(c);
+        setEvents(e);
+        setNotices(n);
+      } catch (err) {
+        console.error("Data fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
+
+    fetchData();
+
+    // Setup update listener (polling for GAS, real-time for Firebase)
+    const unsubscribe = storage.onDataUpdate((data) => {
+      if (data.settings) setSettings(data.settings);
+      setClasses(data.classes);
+      setEvents(data.events);
+      setNotices(data.notices);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  if (!settings) {
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent"></div>
+          <p className="text-slate-500 font-bold animate-pulse">데이터를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!settings || !settings.schoolName) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
