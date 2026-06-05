@@ -26,22 +26,6 @@ export default function AdminPanel() {
   const [notices, setNotices] = useState<Notice[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const s = await storage.getSettings();
-      if (s) setSettings(s);
-      
-      const c = await storage.getClasses();
-      setClasses(c);
-      
-      const e = await storage.getEvents();
-      setEvents(e);
-      
-      const n = await storage.getNotices();
-      setNotices(n);
-    };
-
-    fetchData();
-
     const unsubscribe = storage.onDataUpdate((data) => {
       if (data.settings) setSettings(data.settings);
       setClasses(data.classes);

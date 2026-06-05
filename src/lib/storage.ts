@@ -205,22 +205,39 @@ export const storage = {
       const interval = setInterval(poll, 30000); // 30 seconds
       return () => clearInterval(interval);
     } else {
-      // True real-time for Firebase
-      const unsubSettings = onSnapshot(doc(db, "settings", "config"), (doc) => {
-        storage.getSettings().then(settings => {
-          storage.getClasses().then(classes => {
-            storage.getEvents().then(events => {
-              storage.getNotices().then(notices => {
-                callback({ settings, classes, events, notices });
-              });
-            });
-          });
-        });
+      let settings: SchoolSettings | null = null;
+      let classes: ClassData[] = [];
+      let events: MonthlyEvent[] = [];
+      let notices: Notice[] = [];
+
+      const emit = () => callback({ settings, classes, events, notices });
+
+      const unsubSettings = onSnapshot(doc(db, "settings", "config"), (snapshot) => {
+        settings = snapshot.exists() ? (snapshot.data() as SchoolSettings) : null;
+        emit();
       });
-      // This is a bit inefficient for Firebase, but keeps the API uniform.
-      // Better to use individual listeners in components as before, 
-      // but the user wants a "GAS perfect implementation" which favors the GAS side.
-      return unsubSettings;
+
+      const unsubClasses = onSnapshot(collection(db, "classes"), (snapshot) => {
+        classes = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ClassData));
+        emit();
+      });
+
+      const unsubEvents = onSnapshot(collection(db, "events"), (snapshot) => {
+        events = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as MonthlyEvent));
+        emit();
+      });
+
+      const unsubNotices = onSnapshot(query(collection(db, "notices"), orderBy("createdAt", "desc")), (snapshot) => {
+        notices = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notice));
+        emit();
+      });
+
+      return () => {
+        unsubSettings();
+        unsubClasses();
+        unsubEvents();
+        unsubNotices();
+      };
     }
   }
 };

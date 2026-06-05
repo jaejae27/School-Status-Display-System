@@ -16,33 +16,13 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initial fetch
-    const fetchData = async () => {
-      try {
-        const s = await storage.getSettings();
-        const c = await storage.getClasses();
-        const e = await storage.getEvents();
-        const n = await storage.getNotices();
-        
-        setSettings(s);
-        setClasses(c);
-        setEvents(e);
-        setNotices(n);
-      } catch (err) {
-        console.error("Data fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-
-    // Setup update listener (polling for GAS, real-time for Firebase)
+    // onDataUpdate handles initial fetch and real-time updates
     const unsubscribe = storage.onDataUpdate((data) => {
       if (data.settings) setSettings(data.settings);
       setClasses(data.classes);
       setEvents(data.events);
       setNotices(data.notices);
+      setLoading(false);
     });
 
     return () => unsubscribe();
