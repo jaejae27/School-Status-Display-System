@@ -1,0 +1,8 @@
+{
+  "name": "학교 현황판",
+  "description": "학교의 학급 현원, 시정표, 월중 행사, 공지사항 등을 한눈에 관리하고 표기하는 지능형 현황판 서비스",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

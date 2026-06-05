@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "Settings": {
+      "title": "School Settings",
+      "description": "Global configuration for the school dashboard",
+      "type": "object",
+      "properties": {
+        "schoolName": { "type": "string" },
+        "schoolVision": { "type": "string" },
+        "address": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "schoolType": { "type": "string", "enum": ["elementary", "middle", "high"] },
+        "firstPeriodStartTime": { "type": "string" },
+        "assemblyTime": { "type": "string" }
+      },
+      "required": ["schoolName", "schoolType", "firstPeriodStartTime"]
+    },
+    "Class": {
+      "title": "Class Status",
+      "description": "Information about a specific class",
+      "type": "object",
+      "properties": {
+        "grade": { "type": "integer" },
+        "classNumber": { "type": "integer" },
+        "homeroomTeacher": { "type": "string" },
+        "assistantTeacher": { "type": "string" },
+        "boysCount": { "type": "integer" },
+        "girlsCount": { "type": "integer" }
+      },
+      "required": ["grade", "classNumber"]
+    },
+    "Event": {
+      "title": "Monthly Event",
+      "description": "An event scheduled for a specific day",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "content": { "type": "string" }
+      },
+      "required": ["date", "content"]
+    },
+    "Notice": {
+      "title": "Staff Notice",
+      "description": "Announcements for school staff",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "createdAt": { "type": "integer" }
+      },
+      "required": ["content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/settings/config": {
+      "schema": "Settings",
+      "description": "Global school settings"
+    },
+    "/classes/{classId}": {
+      "schema": "Class",
+      "description": "Collection of all classes"
+    },
+    "/events/{eventId}": {
+      "schema": "Event",
+      "description": "Collection of monthly events"
+    },
+    "/notices/{noticeId}": {
+      "schema": "Notice",
+      "description": "Collection of staff notices"
+    }
+  }
+}
